@@ -28,8 +28,8 @@ dependencies = [
   "msgpack",
   "numpy",
   "psutil",
-  "ruamel.yaml",
-  "tensorflow-cpu",
+  "ruamel.yaml==0.17.32",
+  "tensorflow-cpu==2.16.1",
   "zmq"
 ]
 
