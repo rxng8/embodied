@@ -1,5 +1,7 @@
 #!/bin/bash -l
 
+# Basically install what is inside pyproject.toml dependencies but with pytorch
+
 # Torch
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 # Jax optimiation libraries and tf-cpu
