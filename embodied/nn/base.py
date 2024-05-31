@@ -501,26 +501,6 @@ class BlockLinear(nj.Module):
     return x
 
 
-class Embed(nj.Module):
-
-  outscale: float = 1.0
-  winit: str = 'normal'
-  fan: str = 'in'
-  dtype: str = 'default'
-
-  def __init__(self, count, units):
-    self.count = count
-    self.units = units
-    self._winit = Initializer(self.winit, self.outscale, self.fan, self.dtype)
-
-  def __call__(self, x):
-    assert x.dtype in (jnp.uint32, jnp.int32), x.dtype
-    shape = (self.count, self.units)
-    fan_shape = (1, self.units)
-    w = self.get('embed', self._winit, shape, fan_shape).astype(x.dtype)
-    return jnp.take(w, x, axis=0)
-
-
 class Norm(nj.Module):
 
   act: str = 'none'
@@ -581,6 +561,23 @@ class Norm(nj.Module):
       return cast(x)
     else:
       raise NotImplementedError(self._impl)
+
+
+class GroupNorm(nj.Module):
+
+  def __init__(self, groups: int):
+    self._groups = groups
+
+  def __call__(self, x):
+    dtype = x.dtype
+    x = x.astype(f32)
+    x = x.reshape((*x.shape[:-1], self._groups, -1))
+    x = jax.nn.standardize(x, axis=-1, epsilon=1e-5)
+    x *= self.get('scale', jnp.ones, x.shape[-1], f32)
+    x += self.get('bias', jnp.zeros, x.shape[-1], f32)
+    x = x.reshape((*x.shape[:-2], -1))
+    x = x.astype(dtype)
+    return x
 
 
 class Moments(nj.Module):
