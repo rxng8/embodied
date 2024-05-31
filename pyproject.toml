@@ -11,14 +11,26 @@ name = "embodied"
 version = "0.0.1"
 authors = [
   { name="Viet Dung Nguyen", email="vietdungnguyen233@gmail.com" },
+  { name = "Danijar Hafner" },
 ]
 description = "A small package that is commonly used in everything. Mixture of a lot of things. Limit the use of third-parties libraries"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "cloudpickle",
+  "colored",
+  "gputil",
+  "msgpack",
+  "numpy",
+  "psutil",
+  "ruamel.yaml",
+  "tensorflow-cpu",
+  "zmq"
 ]
 
 [project.urls]

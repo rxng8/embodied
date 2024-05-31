@@ -46,67 +46,67 @@ class Uniform:
       self.keys[index] = last
       self.indices[last] = index
 
+# NOTE: VN: Currently, this class cause syntax error
+# class Recency:
 
-class Recency:
+#   def __init__(self, uprobs, seed=0):
+#     assert uprobs[0] >= uprobs[-1], uprobs
+#     self.uprobs = uprobs
+#     self.tree = self._build(uprobs)
+#     self.rng = np.random.default_rng(seed)
+#     self.step = 0
+#     self.steps = {}
+#     self.items = {}
 
-  def __init__(self, uprobs, seed=0):
-    assert uprobs[0] >= uprobs[-1], uprobs
-    self.uprobs = uprobs
-    self.tree = self._build(uprobs)
-    self.rng = np.random.default_rng(seed)
-    self.step = 0
-    self.steps = {}
-    self.items = {}
+#   def __call__(self):
+#     for retry in range(10):
+#       try:
+#         age = self._sample(self.tree, self.rng)
+#         if len(self.items) < len(self.uprobs):
+#           age = int(age / len(self.uprobs) * len(self.items))
+#         return self.items[self.step - 1 - age]
+#       except KeyError:
+#         # Item might have been deleted very recently.
+#         if retry < 9:
+#           import time
+#           time.sleep(0.01)
+#         else:
+#           raise
 
-  def __call__(self):
-    for retry in range(10):
-      try:
-        age = self._sample(self.tree, self.rng)
-        if len(self.items) < len(self.uprobs):
-          age = int(age / len(self.uprobs) * len(self.items))
-        return self.items[self.step - 1 - age]
-      except KeyError:
-        # Item might have been deleted very recently.
-        if retry < 9:
-          import time
-          time.sleep(0.01)
-        else:
-          raise
+#   def __setitem__(self, key, stepids):
+#     self.steps[key] = self.step
+#     self.items[self.step] = key
+#     self.step += 1
 
-  def __setitem__(self, key, stepids):
-    self.steps[key] = self.step
-    self.items[self.step] = key
-    self.step += 1
+#   def __delitem__(self, key):
+#     step = self.steps.pop(key)
+#     del self.items[step]
 
-  def __delitem__(self, key):
-    step = self.steps.pop(key)
-    del self.items[step]
+#   def _sample(self, tree, rng, bfactor=16):
+#     path = []
+#     for level, prob in enumerate(tree):
+#       segment = prob[*path]
+#       path += (rng.choice(len(segment), p=segment),)
+#     index = sum(
+#         index * bfactor ** (len(tree) - level - 1)
+#         for level, index in enumerate(path))
+#     return index
 
-  def _sample(self, tree, rng, bfactor=16):
-    path = []
-    for level, prob in enumerate(tree):
-      segment = prob[*path]
-      path += (rng.choice(len(segment), p=segment),)
-    index = sum(
-        index * bfactor ** (len(tree) - level - 1)
-        for level, index in enumerate(path))
-    return index
-
-  def _build(self, uprobs, bfactor=16):
-    assert np.isfinite(uprobs).all(), uprobs
-    assert (uprobs >= 0).all(), uprobs
-    depth = int(np.ceil(np.log(len(uprobs)) / np.log(bfactor)))
-    size = bfactor ** depth
-    uprobs = np.concatenate([uprobs, np.zeros(size - len(uprobs))])
-    tree = [uprobs]
-    for level in reversed(range(depth - 1)):
-      tree.insert(0, tree[0].reshape((-1, bfactor)).sum(-1))
-    for level, prob in enumerate(tree):
-      prob = prob.reshape([bfactor] * (1 + level))
-      total = prob.sum(-1, keepdims=True)
-      with np.errstate(divide='ignore', invalid='ignore'):
-        tree[level] = np.where(total, prob / total, prob)
-    return tree
+#   def _build(self, uprobs, bfactor=16):
+#     assert np.isfinite(uprobs).all(), uprobs
+#     assert (uprobs >= 0).all(), uprobs
+#     depth = int(np.ceil(np.log(len(uprobs)) / np.log(bfactor)))
+#     size = bfactor ** depth
+#     uprobs = np.concatenate([uprobs, np.zeros(size - len(uprobs))])
+#     tree = [uprobs]
+#     for level in reversed(range(depth - 1)):
+#       tree.insert(0, tree[0].reshape((-1, bfactor)).sum(-1))
+#     for level, prob in enumerate(tree):
+#       prob = prob.reshape([bfactor] * (1 + level))
+#       total = prob.sum(-1, keepdims=True)
+#       with np.errstate(divide='ignore', invalid='ignore'):
+#         tree[level] = np.where(total, prob / total, prob)
+#     return tree
 
 
 class Prioritized:
