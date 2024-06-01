@@ -8,6 +8,7 @@ from . import jaxutils
 from . import functional
 from . import distributions
 from . import ninjax as nj
+from . import const
 
 f32 = jnp.float32
 tfd = tfp.distributions
@@ -57,7 +58,7 @@ class SimpleEncoder(nj.Module):
 
     if self.imgkeys:
       print('ENC')
-      x = self.imginp(data, bdims, jaxutils.COMPUTE_DTYPE) - 0.5
+      x = self.imginp(data, bdims, const.COMPUTE_DTYPE) - 0.5
       x = x.reshape((-1, *x.shape[bdims:]))
       for i, depth in enumerate(self.depths):
         stride = 1 if self.outer and i == 0 else 2
@@ -108,7 +109,7 @@ class SimpleDecoder(nj.Module):
     outs = {}
 
     if self.veckeys:
-      inp = self.inp(lat, bdims, jaxutils.COMPUTE_DTYPE)
+      inp = self.inp(lat, bdims, const.COMPUTE_DTYPE)
       x = inp.reshape((-1, inp.shape[-1]))
       for i in range(self.layers):
         x = self.get(f'mlp{i}', Linear, self.units, **kw)(x)
@@ -121,7 +122,7 @@ class SimpleDecoder(nj.Module):
         outs[k] = self.get(f'out_{k}', Dist, self.spaces[k].shape, **dist)(x)
 
     if self.imgkeys:
-      inp = self.inp(lat, bdims, jaxutils.COMPUTE_DTYPE)
+      inp = self.inp(lat, bdims, const.COMPUTE_DTYPE)
       print('DEC')
       shape = (self.minres, self.minres, self.depths[-1])
       x = inp.reshape((-1, inp.shape[-1]))
@@ -185,7 +186,7 @@ class MLP(nj.Module):
     self.dkw = {k: v for k, v in kw.items() if k not in forbidden}
 
   def __call__(self, inputs, bdims=2, training=False):
-    feat = self.inputs(inputs, bdims, jaxutils.COMPUTE_DTYPE)
+    feat = self.inputs(inputs, bdims, const.COMPUTE_DTYPE)
     x = feat.reshape([-1, feat.shape[-1]])
     for i in range(self.layers):
       x = self.get(f'h{i}', Linear, self.units, **self.lkw)(x)
@@ -354,7 +355,7 @@ class Conv2D(nj.Module):
     self._norm = Norm(self.norm, name='norm')
 
   def __call__(self, x):
-    assert x.dtype == jaxutils.COMPUTE_DTYPE, (x.dtype, x.shape)
+    assert x.dtype == const.COMPUTE_DTYPE, (x.dtype, x.shape)
     x = self._layer(x)
     x = self._norm(x)
     x = get_act(self.act)(x)
@@ -387,7 +388,7 @@ class Conv2D(nj.Module):
         args = (self._binit, self.depth)
       x += self.get('bias', *args).astype(x.dtype)
       flops += int(np.prod(x.shape[-3:]))
-    assert x.dtype == jaxutils.COMPUTE_DTYPE, (x.dtype, x.shape)
+    assert x.dtype == const.COMPUTE_DTYPE, (x.dtype, x.shape)
     return x
 
 
@@ -411,7 +412,7 @@ class Linear(nj.Module):
     self._norm = Norm(self.norm, name='norm')
 
   def __call__(self, x):
-    assert x.dtype == jaxutils.COMPUTE_DTYPE, (x.dtype, x.shape)
+    assert x.dtype == const.COMPUTE_DTYPE, (x.dtype, x.shape)
     x = self._layer(x)
     x = self._norm(x)
     x = get_act(self.act)(x)
@@ -429,7 +430,7 @@ class Linear(nj.Module):
         args = (self._binit, np.prod(self.units))
       x += self.get('bias', *args).astype(x.dtype)
       flops += int(np.prod(self.units))
-    assert x.dtype == jaxutils.COMPUTE_DTYPE, (x.dtype, x.shape)
+    assert x.dtype == const.COMPUTE_DTYPE, (x.dtype, x.shape)
     if len(self.units) > 1:
       x = x.reshape(x.shape[:-1] + self.units)
     return x
@@ -463,7 +464,7 @@ class BlockLinear(nj.Module):
       self._norm = Norm(self.norm, name='norm')
 
   def __call__(self, x):
-    assert x.dtype == jaxutils.COMPUTE_DTYPE, (x.dtype, x.shape)
+    assert x.dtype == const.COMPUTE_DTYPE, (x.dtype, x.shape)
     x = self._layer(x)
     if self.block_norm and self._norm != 'none':
       x = jnp.concatenate([
@@ -497,7 +498,7 @@ class BlockLinear(nj.Module):
       flops += int(np.prod(self.units))
     if len(self.units) > 1:
       x = x.reshape(x.shape[:-1] + self.units)
-    assert x.dtype == jaxutils.COMPUTE_DTYPE, (x.dtype, x.shape)
+    assert x.dtype == const.COMPUTE_DTYPE, (x.dtype, x.shape)
     return x
 
 
@@ -723,7 +724,7 @@ class Initializer:
   def __call__(self, shape, fan_shape=None):
     shape = (shape,) if isinstance(shape, (int, np.integer)) else tuple(shape)
     assert all(x > 0 for x in shape), shape
-    dtype = jaxutils.PARAM_DTYPE if self.dtype == 'default' else self.dtype
+    dtype = const.PARAM_DTYPE if self.dtype == 'default' else self.dtype
     dtype = getattr(jnp, dtype) if isinstance(dtype, str) else dtype
     fanin, fanout = self._fans(fan_shape or shape)
     fan = {'avg': (fanin + fanout) / 2, 'in': fanin, 'out': fanout}[self.fan]
