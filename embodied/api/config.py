@@ -29,7 +29,11 @@ def load_config(config_path: pathlib.Path | embodied.Path, argv=[]) -> Config:
       Config: _description_
   """
   assert isinstance(config_path, (pathlib.Path, embodied.Path)), "config path should be in pathlib.Path or embodied.Path format"
-  configs = yaml.YAML(typ='safe').load(config_path)
+  if isinstance(config_path, embodied.Path):
+    _config_path = config_path.read()
+  elif isinstance(config_path, pathlib.Path):
+    _config_path = config_path
+  configs = yaml.YAML(typ='safe').load(_config_path)
   parsed, other = Flags(configs=['defaults']).parse_known(argv)
   # Preping and parsing all configs and overrides
   config = Config(configs['defaults'])
