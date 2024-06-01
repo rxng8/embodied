@@ -7,6 +7,7 @@ from . import envs
 from . import replay
 from . import run
 from . import nn
+from . import api
 
 try:
   from rich import traceback
