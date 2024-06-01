@@ -8,6 +8,19 @@ from . import ninjax as nj
 from .jaxutils import cast_to_compute, sg
 
 
+# def bce(inputs: jax.Array, target: jax.Array, input_type='logit', eps=1e-5):
+#   if input_type == 'logit':
+#     return - (target * (jax.nn.log_sigmoid(inputs)))
+#   elif input_type == 'probs':
+#     return
+#   else:
+#     raise ValueError("`input_type` can only be `logit` or `probs`.")
+
+
+def bce(inputs: jax.Array, target: jax.Array, eps=1e-8):
+  return - (target * (jnp.log(inputs.clip(eps))) + (1 - target) * jnp.log((1 - inputs).clip(eps)))
+
+
 def symlog(x):
   return jnp.sign(x) * jnp.log1p(jnp.abs(x))
 
