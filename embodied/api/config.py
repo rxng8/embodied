@@ -5,7 +5,7 @@ from embodied import Config
 from ruamel import yaml
 from embodied import Flags
 
-def load_config(config_path: str | pathlib.Path | embodied.Path, argv=[]) -> Config:
+def load_config(config_path: pathlib.Path | embodied.Path, argv=[]) -> Config:
   """Accept a YAML file config with file structures:
     ```
     defaults:
@@ -28,7 +28,8 @@ def load_config(config_path: str | pathlib.Path | embodied.Path, argv=[]) -> Con
   Returns:
       Config: _description_
   """
-  configs = yaml.YAML(typ='safe').load(embodied.Path(config_path).read())
+  assert isinstance(config_path, (pathlib.Path, embodied.Path)), "config path should be in pathlib.Path or embodied.Path format"
+  configs = yaml.YAML(typ='safe').load(config_path)
   parsed, other = Flags(configs=['defaults']).parse_known(argv)
   # Preping and parsing all configs and overrides
   config = Config(configs['defaults'])
