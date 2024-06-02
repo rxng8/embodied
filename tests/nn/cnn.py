@@ -20,3 +20,11 @@ def test_residual_block():
   fn = jax.jit(nj.pure(R))
   _, out = fn(params, sample)
   assert out.shape == sample.shape
+
+def test_residual_block_2():
+  R = ResidualBlock(name="R")
+  sample = jnp.asarray(np.random.normal(0, 1, (8, 16, 16, 256)))
+  params = nj.init(R)({}, sample, seed=0)
+  fn = jax.jit(nj.pure(R))
+  _, out = fn(params, sample)
+  assert sample.shape == out.shape

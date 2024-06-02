@@ -24,9 +24,12 @@ class ResidualBlock(nj.Module):
 
   def __call__(self, x: jax.Array) -> jax.Array:
     # input: *B, H, W, C
-    C = x.shape[-1]
+    *B, H, W, C = x.shape
+    pad_width = [(0, 0) for _ in range(len(B))] + [(1, 1), (1, 1), (0, 0)]
+    res = jnp.pad(x, pad_width, mode='reflect') # equals to reflection pad 2D
     res = self.get("res1", Conv2D, C, 3, stride=1,
-      transp=False, act=self.act, norm=self.norm, pad='same')(x)
+      transp=False, act=self.act, norm=self.norm, pad='valid')(res)
+    res = jnp.pad(res, pad_width, mode='reflect') # equals to reflection pad 2D
     res = self.get("res2", Conv2D, C, 3, stride=1,
-      transp=False, act='none', norm=self.norm, pad='same')(res)
+      transp=False, act='none', norm=self.norm, pad='valid')(res)
     return x + res
