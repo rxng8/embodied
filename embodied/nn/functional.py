@@ -17,6 +17,11 @@ from .jaxutils import cast_to_compute, sg
 #     raise ValueError("`input_type` can only be `logit` or `probs`.")
 
 
+def reflection_pad_2d(x: jax.Array, pad: int):
+  *B, H, W, C = x.shape
+  pad_width = [(0, 0) for _ in range(len(B))] + [(pad, pad), (pad, pad), (0, 0)]
+  return jnp.pad(x, pad_width, mode='reflect') # equals to reflection pad 2D
+
 def bce(inputs: jax.Array, target: jax.Array, eps=1e-8):
   return - (target * (jnp.log(inputs.clip(eps))) + (1 - target) * jnp.log((1 - inputs).clip(eps)))
 
