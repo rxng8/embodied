@@ -57,26 +57,44 @@ class Attention(nj.Module):
       This is also align with self attention where the main input is the query, and the key and value here is itself, the query.
 
     Args:
-      query (jax.Array): (B, T, E): T is target sequence length, Q is the dimension of the query. Initially it's an arbitrary dim E => project to Q eventually
-      key (jax.Array): (B, S, K): T is the source sequence length, K is the dimension of the key => project to Q eventually
-      value (jax.Array): (B, S, V): S is the source seuqence length, V is the dimension of the value => project to Q eventually
+      query (jax.Array): (B, *T, E): T is target sequence length, Q is the dimension of the query. Initially it's an arbitrary dim E => project to Q eventually
+      key (jax.Array): (B, *S, K): T is the source sequence length, K is the dimension of the key => project to Q eventually
+      value (jax.Array): (B, *S, V): S is the source seuqence length, V is the dimension of the value => project to Q eventually
 
     Returns:
-      jax.Array: Attention output (B, T, E): T is the target sequence length, Q is the query dim => project back to original embedding dim E
+      jax.Array: Attention output (B, *T, E): T is the target sequence length, Q is the query dim => project back to original embedding dim E
     """
-    # assert query.shape[-1] == self._embed_dim, ""
-    B, T, E = query.shape #
+    # # assert query.shape[-1] == self._embed_dim, ""
+    # B, T, E = query.shape #
+    # scale = 1.0 / jnp.sqrt(self._hidden) # ()
+    # query = self.get("q", Linear, (self._head, self._hidden), **self._kwargs)(query) # (B, T, H, Q)
+    # key = self.get("k", Linear, (self._head, self._hidden), **self._kwargs)(key) # (B, S, H, K) K==Q
+    # value = self.get("v", Linear, (self._head, self._hidden), **self._kwargs)(value) # (B, S, H, V) V==Q
+    # attention_weights = jnp.einsum("BTHQ,BSHQ->BTHS", query, key) # (B, T, H, S)
+    # attention_weights = attention_weights * scale # weighted scores
+    # attention_weights = jax.nn.softmax(attention_weights, axis=-1) # (B, T, H, S)
+    # attention_out = jnp.einsum("BTHS,BSHQ->BTHQ", attention_weights, value) # (B, T, H, Q)
+    # attention_out = attention_out.reshape((B, T, -1)) # (B, T, HQ)
+    # attention_out = self.get("out", Linear, E, **self._kwargs)(attention_out)
+    # return attention_out
+        # assert query.shape[-1] == self._embed_dim, ""
+    B, *T, E = query.shape # B has to be consistent among all variables
+    _, *S1, K = key.shape # S1 has to equal S2
+    _, *S2, V = value.shape # S1 has to equal S2
+    _query = query.reshape((B, np.prod(T), E)) # (B, pT, C)
+    _key = key.reshape((B, np.prod(S1), K)) # (B, pT, C)
+    _value = value.reshape((B, np.prod(S2), V)) # (B, pT, C)
     scale = 1.0 / jnp.sqrt(self._hidden) # ()
-    query = self.get("q", Linear, (self._head, self._hidden), **self._kwargs)(query) # (B, T, H, Q)
-    key = self.get("k", Linear, (self._head, self._hidden), **self._kwargs)(key) # (B, S, H, K) K==Q
-    value = self.get("v", Linear, (self._head, self._hidden), **self._kwargs)(value) # (B, S, H, V) V==Q
-    attention_weights = jnp.einsum("BTHQ,BSHQ->BTHS", query, key) # (B, T, H, S)
+    _query = self.get("q", Linear, (self.head, self._hidden), **self._kwargs)(_query) # (B, T, H, Q)
+    _key = self.get("k", Linear, (self.head, self._hidden), **self._kwargs)(_key) # (B, S, H, K) K==Q
+    _value = self.get("v", Linear, (self.head, self._hidden), **self._kwargs)(_value) # (B, S, H, V) V==Q
+    attention_weights = jnp.einsum("BTHQ,BSHQ->BTHS", _query, _key) # (B, T, H, S)
     attention_weights = attention_weights * scale # weighted scores
     attention_weights = jax.nn.softmax(attention_weights, axis=-1) # (B, T, H, S)
-    attention_out = jnp.einsum("BTHS,BSHQ->BTHQ", attention_weights, value) # (B, T, H, Q)
-    attention_out = attention_out.reshape((B, T, -1)) # (B, T, HQ)
+    attention_out = jnp.einsum("BTHS,BSHQ->BTHQ", attention_weights, _value) # (B, T, H, Q)
+    attention_out = attention_out.reshape((B, np.prod(T), -1)) # (B, T, HQ)
     attention_out = self.get("out", Linear, E, **self._kwargs)(attention_out)
-    return attention_out
+    return attention_out.reshape((B, *T, E))
 
   def self_attention(self, query):
     return self._cross_attention(query, query, query)
