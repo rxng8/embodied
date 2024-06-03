@@ -18,17 +18,17 @@ sg = lambda x: jax.tree_util.tree_map(jax.lax.stop_gradient, x)
 cast = jaxutils.cast_to_compute
 
 class Attention(nj.Module):
-  def __init__(self, hidden: int, heads: int, **kwargs) -> None:
+  def __init__(self, hidden: int, head: int, **kwargs) -> None:
     """Usage: (B, T, E) -> (B, T, E)
 
     Args:
         hidden (int): _description_
-        heads (int): _description_
+        head (int): _description_
     """
-    self._heads = heads
-    assert hidden % heads == 0, f"hidden must be divisible by heads, got hidden={hidden}, heads={heads}"
+    self._head = head
+    assert hidden % head == 0, f"hidden must be divisible by head, got hidden={hidden}, head={head}"
     # self._embed_dim = hidden # query dim * head: the dim of input
-    self._hidden = hidden // heads # dimension of the query: Q, we will project dim of key and value to this query dim
+    self._hidden = hidden // head # dimension of the query: Q, we will project dim of key and value to this query dim
     self._kwargs = {**kwargs, 'act': 'none'} # make sure act is none
 
   def _cross_attention(self, query: jax.Array, key: jax.Array, value: jax.Array) -> jax.Array:
@@ -65,9 +65,9 @@ class Attention(nj.Module):
     # assert query.shape[-1] == self._embed_dim, ""
     B, T, E = query.shape #
     scale = 1.0 / jnp.sqrt(self._hidden) # ()
-    query = self.get("q", Linear, (self._heads, self._hidden), **self._kwargs)(query) # (B, T, H, Q)
-    key = self.get("k", Linear, (self._heads, self._hidden), **self._kwargs)(key) # (B, S, H, K) K==Q
-    value = self.get("v", Linear, (self._heads, self._hidden), **self._kwargs)(value) # (B, S, H, V) V==Q
+    query = self.get("q", Linear, (self._head, self._hidden), **self._kwargs)(query) # (B, T, H, Q)
+    key = self.get("k", Linear, (self._head, self._hidden), **self._kwargs)(key) # (B, S, H, K) K==Q
+    value = self.get("v", Linear, (self._head, self._hidden), **self._kwargs)(value) # (B, S, H, V) V==Q
     attention_weights = jnp.einsum("BTHQ,BSHQ->BTHS", query, key) # (B, T, H, S)
     attention_weights = attention_weights * scale # weighted scores
     attention_weights = jax.nn.softmax(attention_weights, axis=-1) # (B, T, H, S)
