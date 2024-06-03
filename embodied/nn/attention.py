@@ -10,7 +10,7 @@ from . import functional
 from . import distributions
 from . import ninjax as nj
 from .embeddings import SinusoidalPositionEmbedding, Embedding
-from .base import Initializer, Linear
+from .base import Initializer, Linear, GroupNorm, Norm
 
 f32 = jnp.float32
 tfd = tfp.distributions
@@ -18,17 +18,19 @@ sg = lambda x: jax.tree_util.tree_map(jax.lax.stop_gradient, x)
 cast = jaxutils.cast_to_compute
 
 class Attention(nj.Module):
-  def __init__(self, hidden: int, head: int, **kwargs) -> None:
+
+  head: int = 1
+
+  def __init__(self, hidden: int, **kwargs) -> None:
     """Usage: (B, T, E) -> (B, T, E)
 
     Args:
         hidden (int): _description_
         head (int): _description_
     """
-    self._head = head
-    assert hidden % head == 0, f"hidden must be divisible by head, got hidden={hidden}, head={head}"
+    assert hidden % self.head == 0, f"hidden must be divisible by head, got hidden={hidden}, head={self.head}"
     # self._embed_dim = hidden # query dim * head: the dim of input
-    self._hidden = hidden // head # dimension of the query: Q, we will project dim of key and value to this query dim
+    self._hidden = hidden // self.head # dimension of the query: Q, we will project dim of key and value to this query dim
     self._kwargs = {**kwargs, 'act': 'none'} # make sure act is none
 
   def _cross_attention(self, query: jax.Array, key: jax.Array, value: jax.Array) -> jax.Array:
@@ -81,3 +83,21 @@ class Attention(nj.Module):
 
   def cross_attention(self, query, condition):
     return self._cross_attention(query, condition, condition)
+
+
+class CrossAttentionBlock(nj.Module):
+
+  head: int = 1
+  group: int = 1
+
+  def __init__(self, hidden: int, **kwargs) -> None:
+    self._hidden = hidden
+    self._kwargs = kwargs
+    self.att = Attention(self._hidden, head=self.head, **kwargs)
+
+  def __call__(self, query: jax.Array, condition: jax.Array) -> jax.Array:
+    normq = self.get('normq', GroupNorm, self.group)(query)
+    normc = self.get('normc', Norm, 'layer')(condition)
+    att = self.att.cross_attention(normq, normc)
+    return query + att
+
