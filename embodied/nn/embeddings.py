@@ -44,7 +44,7 @@ class SinusoidalPositionEmbedding(nj.Module):
     self._d_model = dim // 2
 
   def __call__(self, pos: jax.Array):
-    # pos: (*B)
+    # pos: (*B): float32 -> out: (*B, dim): float32
     batch_dims = pos.shape
     i = jnp.arange(self._d_model)
     for _ in range(len(batch_dims)):
@@ -64,10 +64,10 @@ class TimeEmbedding(nj.Module):
     self.sin_embed = SinusoidalPositionEmbedding(dim, name="sin_embed")
 
   def __call__(self, t: jax.Array):
-    # t: (B, 1): can be a jax integer, so cast to compute
+    # t: (*B,): can be a jax integer, so cast to compute
     t = jaxutils.cast_to_compute(t)
-    x = self.sin_embed(t)
-    x = self.get("in", Linear, self._dim * 4)(x)
-    x = jax.nn.gelu(x)
-    x = self.get("out", Linear, self._dim * 4)(x)
+    x = self.sin_embed(t) # (*B, dim)
+    x = self.get("in", Linear, self._dim)(x) # (*B, dim)
+    x = jax.nn.gelu(x) # (*B, dim)
+    x = self.get("out", Linear, self._dim)(x) # (*B, dim)
     return x
