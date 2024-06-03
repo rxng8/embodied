@@ -111,7 +111,7 @@ class CrossAttentionBlock(nj.Module):
   def __init__(self, hidden: int, **kwargs) -> None:
     self._hidden = hidden
     self._kwargs = kwargs
-    self.att = Attention(self._hidden, head=self.head, **kwargs)
+    self.att = Attention(self._hidden, head=self.head, **kwargs, name="att")
 
   def __call__(self, query: jax.Array, condition: jax.Array) -> jax.Array:
     normq = self.get('normq', GroupNorm, self.group)(query)
