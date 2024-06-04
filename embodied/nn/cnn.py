@@ -51,8 +51,9 @@ class ResidualTimeBlock(nj.Module):
 
   def __call__(self, inputs: jax.Array, time_embed: jax.Array = None) -> jax.Array:
     x = self.get("conv", Conv2D, self._dim, 3, stride=1,
-      transp=False, act=self.act, norm='none', pad='same')(inputs)
+      transp=False, act='none', norm='none', pad='same')(inputs)
     x = self.get("convn", GroupNorm, self.group)(x)
+    x = self._act(x)
     if time_embed is not None:
       t = self._act(time_embed) # (B, dim)
       t = self.get("time", Linear, 2 * self._dim)(t) # (B, 2dim)
@@ -61,8 +62,9 @@ class ResidualTimeBlock(nj.Module):
       x = x * (1 + scale) + shift # (B, H, W, dim)
     # cnn block
     x = self.get("conv2", Conv2D, self._dim, 3, stride=1,
-      transp=False, act=self.act, norm='none', pad='same')(x)
+      transp=False, act='none', norm='none', pad='same')(x)
     x = self.get("conv2n", GroupNorm, self.group)(x)
+    x = self._act(x)
     # res
     res = self.get("res", Conv2D, self._dim, 1, stride=1,
       transp=False, act='none', norm='none', pad='same')(inputs)
