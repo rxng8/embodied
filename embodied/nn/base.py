@@ -524,8 +524,9 @@ class Norm(nj.Module):
     elif self._impl == 'layer':
       x = x.astype(f32)
       mean = x.mean(-1)[..., None]
-      mean2 = jnp.square(x).mean(-1)[..., None]
-      var = jnp.maximum(0, mean2 - jnp.square(mean))
+      # mean2 = jnp.square(x).mean(-1)[..., None]
+      # var = jnp.maximum(0, mean2 - jnp.square(mean))
+      var = ((x - mean)**2).mean(-1)[..., None]
       scale = self.get('scale', jnp.ones, x.shape[-1], f32)
       offset = self.get('offset', jnp.zeros, x.shape[-1], f32)
       mult = scale * jax.lax.rsqrt(var + self._eps)
@@ -780,6 +781,8 @@ def get_act(name):
     return name
   elif name == 'none':
     return lambda x: x
+  elif name == 'gelu_tanh':
+    return functional.gelu_tanh
   elif name == 'cswiglu':
     def fn(x):
       x, y = jnp.split(x, 2, -1)

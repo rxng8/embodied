@@ -349,6 +349,12 @@ def l2_norm(x: jax.Array):
   x = jnp.sqrt((x**2).sum(-1, keepdims=True) + epsilon).repeat(L, -1) # (*B, 1) -> (*B, L)
   return x.astype(dtype)
 
+def gelu_tanh(x):
+  # Constants used in the approximation
+  sqrt_2_over_pi = jnp.sqrt(2 / jnp.pi)
+  coeff = 0.044715
+  # GELU approximation formula
+  return 0.5 * x * (1 + jnp.tanh(sqrt_2_over_pi * (x + coeff * jnp.power(x, 3))))
 
 def correlation(x1: jax.Array, x2: jax.Array):
   B, H, W, C = x1.shape
