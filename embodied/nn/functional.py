@@ -356,6 +356,18 @@ def gelu_tanh(x):
   # GELU approximation formula
   return 0.5 * x * (1 + jnp.tanh(sqrt_2_over_pi * (x + coeff * jnp.power(x, 3))))
 
+
+def categorical_cross_entropy(logits, labels, onehot=True):
+  # logits: (*B, E), label: (*B)
+  log_probs = jax.nn.log_softmax(logits)
+  if onehot:
+    _labels = jax.nn.one_hot(labels, logits.shape[-1]) # (*B, E)
+  else:
+    _labels = labels # (*B, E)
+  loss = -jnp.sum(log_probs * _labels, axis=-1) # (*B)
+  return loss
+
+
 def correlation(x1: jax.Array, x2: jax.Array):
   B, H, W, C = x1.shape
   x1 = x1.transpose([0, 3, 2, 1]) # (B, C, W, H)
