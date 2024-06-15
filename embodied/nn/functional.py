@@ -16,6 +16,19 @@ from .jaxutils import cast_to_compute, sg
 #   else:
 #     raise ValueError("`input_type` can only be `logit` or `probs`.")
 
+def masked_fill(x: jax.Array, mask: jax.Array, other=0) -> jax.Array:
+  """Return an output with masked condition, with non-masked value
+    be the other value
+
+  Args:
+      x (jax.Array): _description_
+      mask (jax.Array): _description_
+      other (int, optional): _description_. Defaults to 0.
+
+  Returns:
+      jax.Array: _description_
+  """
+  return jnp.where(mask, x, jnp.broadcast_to(other, x.shape))
 
 def reflection_pad_2d(x: jax.Array, pad: int):
   *B, H, W, C = x.shape
