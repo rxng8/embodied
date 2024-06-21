@@ -2,7 +2,7 @@ from .base import Agent, Env, Wrapper, Replay
 
 from .printing import print_ as print
 from .printing import format_ as format
-from .utils import timestamp
+from .utils import timestamp, check_vscode_interactive
 
 from .space import Space
 from .path import Path

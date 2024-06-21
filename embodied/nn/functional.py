@@ -8,6 +8,37 @@ from . import ninjax as nj
 from .jaxutils import cast_to_compute, sg
 
 
+# def bce(inputs: jax.Array, target: jax.Array, input_type='logit', eps=1e-5):
+#   if input_type == 'logit':
+#     return - (target * (jax.nn.log_sigmoid(inputs)))
+#   elif input_type == 'probs':
+#     return
+#   else:
+#     raise ValueError("`input_type` can only be `logit` or `probs`.")
+
+def masked_fill(x: jax.Array, mask: jax.Array, other=0) -> jax.Array:
+  """Return an output with masked condition, with non-masked value
+    be the other value
+
+  Args:
+      x (jax.Array): _description_
+      mask (jax.Array): _description_
+      other (int, optional): _description_. Defaults to 0.
+
+  Returns:
+      jax.Array: _description_
+  """
+  return jnp.where(mask, x, jnp.broadcast_to(other, x.shape))
+
+def reflection_pad_2d(x: jax.Array, pad: int):
+  *B, H, W, C = x.shape
+  pad_width = [(0, 0) for _ in range(len(B))] + [(pad, pad), (pad, pad), (0, 0)]
+  return jnp.pad(x, pad_width, mode='reflect') # equals to reflection pad 2D
+
+def bce(inputs: jax.Array, target: jax.Array, eps=1e-8):
+  return - (target * (jnp.log(inputs.clip(eps))) + (1 - target) * jnp.log((1 - inputs).clip(eps)))
+
+
 def symlog(x):
   return jnp.sign(x) * jnp.log1p(jnp.abs(x))
 
@@ -317,6 +348,24 @@ def l2_norm(x: jax.Array):
   epsilon = 1e-6
   x = jnp.sqrt((x**2).sum(-1, keepdims=True) + epsilon).repeat(L, -1) # (*B, 1) -> (*B, L)
   return x.astype(dtype)
+
+def gelu_tanh(x):
+  # Constants used in the approximation
+  sqrt_2_over_pi = jnp.sqrt(2 / jnp.pi)
+  coeff = 0.044715
+  # GELU approximation formula
+  return 0.5 * x * (1 + jnp.tanh(sqrt_2_over_pi * (x + coeff * jnp.power(x, 3))))
+
+
+def categorical_cross_entropy(logits, labels, onehot=True):
+  # logits: (*B, E), label: (*B)
+  log_probs = jax.nn.log_softmax(logits)
+  if onehot:
+    _labels = jax.nn.one_hot(labels, logits.shape[-1]) # (*B, E)
+  else:
+    _labels = labels # (*B, E)
+  loss = -jnp.sum(log_probs * _labels, axis=-1) # (*B)
+  return loss
 
 
 def correlation(x1: jax.Array, x2: jax.Array):

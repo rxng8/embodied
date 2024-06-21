@@ -9,6 +9,7 @@ from jax.experimental import checkify
 from tensorflow_probability.substrates import jax as tfp
 
 from . import ninjax as nj
+from . import const
 
 tfd = tfp.distributions
 tfb = tfp.bijectors
@@ -16,23 +17,20 @@ treemap = jax.tree_util.tree_map
 sg = lambda x: treemap(jax.lax.stop_gradient, x)
 f32 = jnp.float32
 i32 = jnp.int32
-COMPUTE_DTYPE = f32
-PARAM_DTYPE = f32
-ENABLE_CHECKS = False
 
 
 def cast_to_compute(values):
   return treemap(
-      lambda x: x if x.dtype == COMPUTE_DTYPE else x.astype(COMPUTE_DTYPE),
+      lambda x: x if x.dtype == const.COMPUTE_DTYPE else x.astype(const.COMPUTE_DTYPE),
       values)
 
 
 def get_param_dtype():
-  return PARAM_DTYPE
+  return const.PARAM_DTYPE
 
 
 def check(predicate, message, **kwargs):
-  if ENABLE_CHECKS:
+  if const.ENABLE_CHECKS:
     checkify.check(predicate, message, **kwargs)
 
 
