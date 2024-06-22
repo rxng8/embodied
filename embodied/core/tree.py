@@ -27,5 +27,30 @@ def map_(fn, *trees, isleaf=None):
         {k: map_(fn, *[t[k] for t in trees], **kw) for k in first})
   return fn(*trees)
 
+def leaves_(tree, is_leaf=None):
+  kw = dict(is_leaf=is_leaf)
+  result = []
+  if is_leaf and is_leaf(tree):
+    result.append(tree)
+  if isinstance(tree, list):
+    for t in tree:
+      li = leaves_(t, **kw)
+      [result.append(item) for item in li]
+  elif isinstance(tree, tuple):
+   for t in tree:
+      li = leaves_(t, **kw)
+      [result.append(item) for item in li]
+  elif isinstance(tree, dict):
+    for k, v in tree.items():
+      li = leaves_(v, **kw)
+      [result.append(item) for item in li]
+  elif hasattr(tree, 'keys') and hasattr(tree, 'get'):
+    for k in tree:
+      li = leaves_(tree[k], **kw)
+      [result.append(item) for item in li]
+  else:
+    result.append(tree)
+  return result
 
+leaves = leaves_
 map = map_
