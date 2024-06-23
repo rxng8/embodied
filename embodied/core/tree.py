@@ -32,6 +32,7 @@ def leaves_(tree, is_leaf=None):
   result = []
   if is_leaf and is_leaf(tree):
     result.append(tree)
+    return result
   if isinstance(tree, list):
     for t in tree:
       li = leaves_(t, **kw)
