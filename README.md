@@ -6,6 +6,8 @@ NOTE: Improved upon embodied package from dreamerv3.
 
 ## Changelogs
 
+* June 17, 2024:
+  * Added tree leaves algorithm (similar to jax.tree.leaves)
 
 * June 4, 2024:
   * Added attention mechanism and convolution resnet blocks.
