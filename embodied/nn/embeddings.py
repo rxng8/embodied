@@ -33,7 +33,7 @@ class Embedding(nj.Module):
     assert x.dtype in (jnp.uint32, jnp.int32), x.dtype
     shape = (self.count, self.units)
     fan_shape = (1, self.units)
-    w = self.get('embed', self._winit, shape, fan_shape).astype(x.dtype)
+    w = self.get('embed', self._winit, shape, fan_shape)#.astype(x.dtype)
     return jnp.take(w, x, axis=0)
 
 
