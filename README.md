@@ -6,6 +6,12 @@ NOTE: Improved upon embodied package from dreamerv3.
 
 ## Changelogs
 
+
+* June 4, 2024:
+  * Added attention mechanism and convolution resnet blocks.
+  * Fix embedding bugs
+
+
 * May 31, 2024:
   * Refactored dreamerv3 code and put parts of neural networks libraries inside embodied
   * Implement attention mechanism
