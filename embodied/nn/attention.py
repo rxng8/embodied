@@ -17,6 +17,7 @@ tfd = tfp.distributions
 sg = lambda x: jax.tree_util.tree_map(jax.lax.stop_gradient, x)
 cast = jaxutils.cast_to_compute
 
+
 class Attention(nj.Module):
 
   head: int = 1
