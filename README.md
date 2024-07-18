@@ -6,6 +6,9 @@ NOTE: Improved upon embodied package from dreamerv3.
 
 ## Changelogs
 
+* July 18, 2024:
+  * Update bilinear interpolation functional
+
 * June 17, 2024:
   * Added tree leaves algorithm (similar to jax.tree.leaves)
 
