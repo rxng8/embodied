@@ -514,9 +514,10 @@ class Norm(nj.Module):
     self._eps = eps
 
   def __call__(self, x):
+    orig_type = x.dtype
     x = self._norm(x)
     x = get_act(self.act)(x)
-    return x
+    return x.astype(orig_type)
 
   def _norm(self, x):
     if self._impl == 'none':
