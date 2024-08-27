@@ -783,6 +783,8 @@ def get_act(name):
     return lambda x: x
   elif name == 'gelu_tanh':
     return functional.gelu_tanh
+  elif name == 'gelu_quick':
+    return lambda x: x * jax.nn.sigmoid(1.702 * x)
   elif name == 'cswiglu':
     def fn(x):
       x, y = jnp.split(x, 2, -1)
